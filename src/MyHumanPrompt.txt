@@ -1,0 +1,327 @@
+
+Build a two-tier web application (called AutoOrder) using React for a front end UI and a back end composed of AWS API Gateway (called AutoOrderAPI) and AWS Lambda (called AutoOrderFunction). 
+
+AutoOrder, AutoOrderAPI, and AutoOrderFunction are all aware of the following Constants:
+1.	PERIODS, integer, the maximum number of time periods (weeks), minval=1, maxval=30, default=12.
+2.	SAMPLES, integer, the maximum number of samples (Scenarios), minval=1, maxval=10, default=30.
+
+AutoOrder, AutoOrderAPI, and AutoOrderFunction are all aware of the following Data types:
+1.	"Rqt",  array of integers representing manufacturing requirements of MPN quantity for weeks Rqt[0] through Rqt[PERIODS], each with a minval=0 and maxval=400.
+2.	"Rec",  array of integers representing quantities of MPN scheduled to be received for weeks Rec[0] through Rec[PERIODS], each with a minval=0 and maxval=400. 
+3.	"Inv",  array of integers representing quantities of MPN units in inventory for weeks Inv[0] through Inv[PERIODS], each with a minval=0 and maxval=400.
+4.	"Ord",  array of integers representing quantities of MPN scheduled to be ordered for weeks Ord[0] through Ord[PERIODS], each with a minval=0 and maxval=400.
+5.	ProductionScenario - represents a schedule of production requirements for a Part. Each Part has:
+a.	"Sel", a checkbox indicating whether the Scenario is selected or not.
+b.	"MPN", a 7 character string uniquely identifying the Part, of the form MPN_AAA, MPN_BBB, MPN_CCC, and so on.
+c.	10 character unique identifier called "MPN". 
+d.	"InvTgt", integer column representing target inventory levels, with minval = 10 and maxval=200.
+e.	"SStok", integer column representing inventory safety stock levels, with minval= 0 and maxval=5% of InvTgt in the same row.
+f.	"LdTm", integer representing weeks between order and receiving, with minval=1 and maxval=5.
+g.	"MOQ", integer representing minimum order quantity, with minval=2 and maxval=100.
+h.	"PkQty", integer representing quantity of items in a package, with minval=2 and maxval = 1/5 of MOQ in the same row.
+i.	"Rqt" – array of requirements as defined above.
+j.	"Rec" – array of receiving as defined above.
+6.	"OrderSchedule" represents a schedule of recommended orders to satisfy a ProductionScenario. OrderSchedule has the following columns:
+a.	MPN, a string equal to the MPN of the ProductionScenario this OrderSchedule was calculated for.
+b.	"InvTgt", integer copied from the ProductionScenario input this OrderSchedule was calculated for.
+c.	"SStok", integer copied from the ProductionScenario input this OrderSchedule was calculated for.
+d.	"LdTm", integer copied from the ProductionScenario input this OrderSchedule was calculated for. 
+e.	"MOQ", integer copied from the ProductionScenario input this OrderSchedule was calculated for.
+f.	"PkQty", integer copied from the ProductionScenario input this OrderSchedule was calculated for.
+g.	Rqt, this is just a repeat of the Rqt array from the related ProductionScenario.
+h.	InRec, this is just a repeat of the Rec array from the related ProductionScenario.
+i.	Ord, array of recommended MPN order quantities that is calculated by the algorithm to satisfy the needs of the related ProductionScenario.
+j.	Rec, array of expected receiving that will result from the recommended orders in Ord.
+k.	Inv – array of expected Inventory quantities that will result from the recommended orders in Ord.
+l.	"Notes" – String containing notes about the recommended order schedule.
+7.	"ProductionScenarioArray", an array of ProductionScenario items.
+8.	"OrderScheduleArray", an array of OrderSchedule items.
+
+Implement AutoOrderAPI as AWS API Gateway in CDK typescript infrastructure as code. AutoOrderAPI should be invocable by any origin, and has two paths:
+•	Path 1: "GetProductionScenarios" accepts one argument, "ScenarioSet", a 20 character string whose default value is "Customer". GetProductionScenarios returns a JSON object containing an array of ProductionScenario items.
+•	Path 2: "GetOrders" accepts a ProductionScenarioArray and returns a OrderScheduleArray.
+
+Implement AutoOrderFunction as AWS Lambda in CDK typescript infrastructure as code with two handler functions so the same lambda can be used for both paths of AutoOrderAPI. AutoOrderFunction should further be implemented as follows:
+•	The code of AutoOrderFunction should be typescript. 
+•	Make sure all AutoOrderFunction paths that return a response to the API include headers that allow all origins and optional credentials.
+•	When AutoOrderFunction handles an API request for the GetProductionScenarios API path, it behaves differently for different values of ScenarioSet:
+o	if ScenarioSet == "Random", AutoOrderFunction returns a ProductionScenarioArray of SAMPLES ProductionScenario items that are randomly generated at runtime.
+o	if ScenarioSet == "Customer", AutoOrderFunction returns a ProductionScenarioArray of SAMPLES ProductionScenario items that are statically hardcoded in AutoOrderFunction (generate these randomly at design time so I can replace them in the code manually before deployment).
+o	if ScenarioSet == "Sim", AutoOrderFunction returns a ProductionScenarioArray of SAMPLES ProductionScenario items that are statically hardcoded in AutoOrderFunction (generate these randomly at design time, but I will not replace them manually).
+•	When AutoOrderFunction handles an API request for the GetOrders API path, it calculates the OrderScheduleArray array of OrderSchedule items for the response using the following algorithm:
+[[[
+Manufacturers produce assemblies that are composed of parts, which are ordered and later received from suppliers.  
+
+Inventory Basics:
+1.	MPNs are held in inventory.
+2.	Although it would be easiest to keep lots of extra inventory so there is always enough available for manufacturing, carrying extra units in inventory has a cost which should be minimized.
+3.	Manufacturers decide on a InvTgt that is usually set to be a little bit higher than the average MPN Rqt per week.
+4.	Manufacturers also decide on SStok, to guard against running out of inventory, which would prevent manufacturing.
+5.	Orders are placed to replenish inventory consumed by manufacturing, but ordered are not received until LdTm weeks after they are ordered.
+6.	Each order must be for at least MOQ units.
+7.	Each order must be for a quantity of units that is a whole integer multiple of PkQty.
+8.	Total inventory available for manufacturing in any week is calculated as Inv + Rec for that week.
+9.	Manufacturers try to keep approximately InvTgt+SStok in inventory after manufacturing Rqt units and receiving Rec units.
+
+Manufacturing Operations Basics:
+1.	Manufacturing consumes MPNs from inventory.
+2.	Receiving inserts MPNs into inventory
+
+Basic Business Operations for the manufacturer:
+1.	Manufacturer is committed to produce the quantities in the Rqt schedule.
+2.	Manufacturer can't produce more units than are available in Inv.
+
+Based on the foregoing understanding implement the algorithm as follows:
+1.	Accepts a ProductionScenario and returns a OrderSchedule 
+2.	It considers the ProductionScenario's Rqt, Rec, Inv, and total inventory for each week, together with the MPN's MOQ, PkQty, and LdTm.
+3.	It calculates the Ord array of OrderSchedule to optimize across all known weeks according to the following priorities in priority order:
+a.	avoid letting inventory fall so low as to halt manufacturing
+b.	avoid having inventory greater than 3x InvTgt for 2 or more weeks in a row.
+c.	Aim for all weeks to end with Inv close to InvTgt+SStok
+4.	After calculating the Ord array it recalculates:
+a.	The Rec array by considering LdTm and adding the ordered amounts to any existing Rec that were provided in the ProductionScenario.
+b.	The Inv array based on Rqt, Ord, and Rec.
+5.	it populates Notes indicating if any of the following conditions occur with the recommended Ord:
+a.	allows inventory to get to zero
+b.	allows inventory to get to three times target inventory or more for 2 weeks or more in a row.
+
+Be sure to avoid infinite loops and infinite recursion. Avoid division by zero.
+Include thoughtful behavior so the algorithm doesn't fail when it has to look before week  0 or after week PERIODS.
+
+Here is some algorithm code you created previously using the algorithm prompt above. It works well. Make the algorithm code as much like this as possible:
+
+import { ProductionScenario, OrderSchedule } from "../types";
+
+export function calculateOrderSchedule(scenario: ProductionScenario): OrderSchedule {
+  const { MPN, InvTgt, SStok, LdTm, MOQ, PkQty, Rqt, Rec, Inv } = scenario;
+  
+  // Initialize the output arrays with the same length as Rqt (13 weeks)
+  const weekCount = Rqt.length;
+  const calculatedOrd: number[] = new Array(weekCount).fill(0);
+  const calculatedRec: number[] = [...Rec]; // Start with the existing receiving schedule
+  const calculatedInv: number[] = [...Inv]; // Start with the existing inventory levels
+  const notes: string[] = [];
+  
+  // Calculate orders for each week
+  for (let week = 0; week < weekCount; week++) {
+    // Calculate projected inventory and determine if an order is needed
+    let projectedInv = week === 0 ? Inv[0] : calculatedInv[week - 1];
+    
+    // Add receiving for the current week
+    projectedInv += calculatedRec[week];
+    
+    // Subtract requirements for the current week
+    projectedInv -= Rqt[week];
+    
+    // Update inventory for current week
+    calculatedInv[week] = Math.max(0, projectedInv);
+    
+    // Check if we need to place an order
+    // Look ahead for LdTm weeks to see if inventory will drop below safety stock
+    const targetInv = InvTgt + SStok;
+    let shouldOrder = false;
+    let criticalWeek = -1;
+    let lowestProjectedInv = projectedInv;
+    
+    // Look ahead to determine if we need to order
+    for (let ahead = 1; ahead <= Math.min(LdTm + 3, weekCount - week - 1); ahead++) {
+      let futureInv = calculatedInv[week];
+      
+      // Add future receiving
+      for (let i = week + 1; i <= week + ahead && i < weekCount; i++) {
+        futureInv += calculatedRec[i];
+      }
+      
+      // Subtract future requirements
+      for (let i = week + 1; i <= week + ahead && i < weekCount; i++) {
+        futureInv -= Rqt[i];
+      }
+      
+      // Check if we're projected to go below safety stock
+      if (futureInv < SStok) {
+        shouldOrder = true;
+        if (criticalWeek === -1 || futureInv < lowestProjectedInv) {
+          criticalWeek = week + ahead;
+          lowestProjectedInv = futureInv;
+        }
+      }
+    }
+    
+    // Check if inventory is already excessive (over 3 times the target)
+    const excessiveInv = calculatedInv[week] > InvTgt * 3;
+    let nextWeekExcessive = false;
+    
+    if (week < weekCount - 1) {
+      const nextWeekInv = calculatedInv[week] + calculatedRec[week + 1] - Rqt[week + 1];
+      nextWeekExcessive = nextWeekInv > InvTgt * 3;
+    }
+    
+    // Don't order if inventory is already excessive for this and next week
+    if (excessiveInv && nextWeekExcessive) {
+      shouldOrder = false;
+    }
+    
+    // Calculate order quantity if needed
+    if (shouldOrder) {
+      // Calculate how much to order to reach target inventory by critical week
+      let orderQty = targetInv - lowestProjectedInv;
+      
+      // Enforce minimum order quantity
+      orderQty = Math.max(orderQty, MOQ);
+      
+      // Round up to nearest package quantity
+      orderQty = Math.ceil(orderQty / PkQty) * PkQty;
+      
+      calculatedOrd[week] = orderQty;
+      
+      // Update future receiving based on lead time
+      const receiveWeek = Math.min(week + LdTm, weekCount - 1);
+      calculatedRec[receiveWeek] += orderQty;
+      
+      // Recalculate future inventory levels after this order
+      for (let i = receiveWeek; i < weekCount; i++) {
+        if (i === 0) {
+          calculatedInv[i] = Inv[0] + calculatedRec[i] - Rqt[i];
+        } else {
+          calculatedInv[i] = Math.max(0, calculatedInv[i - 1] + calculatedRec[i] - Rqt[i]);
+        }
+      }
+    }
+  }
+  
+  // Check for critical conditions and add notes
+  let hasZeroInventory = false;
+  let hasExcessiveInventory = false;
+  let consecutiveExcessWeeks = 0;
+  
+  for (let week = 0; week < weekCount; week++) {
+    if (calculatedInv[week] <= 0) {
+      hasZeroInventory = true;
+    }
+    
+    if (calculatedInv[week] >= InvTgt * 3) {
+      consecutiveExcessWeeks++;
+      if (consecutiveExcessWeeks >= 2) {
+        hasExcessiveInventory = true;
+      }
+    } else {
+      consecutiveExcessWeeks = 0;
+    }
+  }
+  
+  let finalNotes = "";
+  if (hasZeroInventory) {
+    finalNotes += "WARNING: Inventory reaches zero or below in some weeks. ";
+  }
+  
+  if (hasExcessiveInventory) {
+    finalNotes += "CAUTION: Inventory exceeds 3x target for 2+ consecutive weeks. ";
+  }
+  
+  if (!finalNotes) {
+    finalNotes = "Schedule optimized successfully.";
+  }
+  
+  return {
+    MPN,
+    Rqt,
+    Ord: calculatedOrd,
+    Rec: calculatedRec,
+    Inv: calculatedInv,
+    Notes: finalNotes.trim()
+  };
+}
+
+]]]
+
+Implement the order schedule algorithm in shared typescript file that can be used by the React UI and also the API.
+
+Implement AutoOrderAPI and AutoOrderFunction in the same CDK typescript stack.
+
+In the UI code, generate 2 hardcoded arrays for local testing independent of the API:
+1.	A ProductionScenarioArray called LocalProductionScenarioArray, with 20 generated ProductionScenario items.
+2.	A OrderScheduleArray called LocalOrderScheduleArray with 20 generated OrderSchedule items. 
+
+Implement 5 rows in the AutoOrder UI:
+•	1st Row: Title (50Px tall): Text="Auto Order Generator" in large bold.
+•	2nd row: ScenarioSelection:
+o	Has a DropDown to Select a valid value for ScenarioSet.
+o	Has 2 command buttons:
+	"GetLocalScenarios"
+	"GetAPIScenarios"
+o	Has a table (called ProductionScenarioTable) with (1px black border)
+o	Each Scenario/MPN has the following columns:
+o	Sel.
+o	MPN.
+o	MPNAttrs: text of the form: LdTm[val], MOQ[val], PkQty[val], InvTgt[val], SStok[val].
+	Put a single-spaced line break after LdTm[val], and after PkQty[val] so the MPNAttrs column takes up less horizontal space.
+o	Sel, MPN, and MPNAttrs, columns are vertically merged across 3 "Info" rows.
+	Row heading: "Rqt": Columns for ProductionScenario Rqt[0] – Rqt[PERIODS]
+	Row heading: "Rec": Columns for ProductionScenario Rec[0] – Rec[PERIODS]
+	Row heading: "Inv": Columns for ProductionScenario Inv[0] – Inv[PERIODS]
+o	Include column headings at the top of the ProductionScenarioTable table.
+o	Dont use a lot of vertical padding in the rows. Try to keep the rows vertically dense.
+o	User can change Sel checkboxes on any row of ProductionScenarioTable.
+•	3rd row: Has 2 command buttons:
+o	"RecommendLocal" Gets the rows from ProductionScenarioTable where the Sel checkbox is checked and combines them into an asynchronous POST request to AutoOrderAPI.
+o	"RecommendOrders" Gets the rows from ProductionScenarioTable where the Sel checkbox is checked.
+•	4th Row: Has a table called "OrderScheduleTable"
+o	Some kind of hourglass is displayed in the OrderScheduleTable until the response from AutoOrderAPI is received and displayed in OrderScheduleTable.
+o	Use a thin light gray border around every cell OrderScheduleTable.
+o	Each Scenario/MPN has the following columns:
+o	MPN.
+o	MPNAttrs: text of the form: LdTm[val], MOQ[val], PkQty[val], InvTgt[val], SStok[val].
+a.	Put a single-spaced line break after LdTm[val], and after PkQty[val] so the MPNAttrs column takes up less horizontal space.
+o	Notes.
+o	"Dir" indicating data direction "In" or "Out".
+o	MPN, MPNAttr, and Notes columns are vertically merged across 2 "Dir" rows.
+	Row heading "In:" is vertically merged across these rows of ProductionScenario, with row headings:
+•	Row heading: "Rqt": Columns for ProductionScenario Rqt[0] – Rqt[PERIODS]
+•	Row heading: "Rec": Columns for ProductionScenario Rec[0] – Rec[PERIODS]
+•	Row heading: "Inv": Columns for ProductionScenario Inv[0] – Inv[PERIODS]
+	Row heading: "Out:" is vertically merged across these rows of OrderSchedule:
+•	Row heading: "Rqt": Columns for OrderSchedule Rqt[0] – Rqt[PERIODS]
+•	Row heading: "Ord": Columns for OrderSchedule Ord[0] – Ord[PERIODS]
+•	Row heading: "Rec": Columns for OrderSchedule Rec[0] – Rec[PERIODS]
+•	Row heading: "Inv": Columns for OrderSchedule Inv[0] – Inv[PERIODS]
+o	Include column headings at the top of the Demonstration table.
+o	Use this dynamic color coding for cells and or rows that exhibit any of the conditions described with Notes:
+	Make the cell a reddish/error color if inventory gets to zero.
+	Make the cell an orangish/warning color if the inventory gets to 3 times TgtInv or higher for 2 weeks or more.
+o	Show a color coding legend somewhere. 
+o	Dont use a lot of vertical padding in the rows. Try to keep the rows vertically dense.
+•	5th Row: Demonstration
+o	Displays a table that generates 100 sample ProductionScenario items, and then calculates the related OrderSchedule.
+o	Then display both in a table structured just like OrderScheduleTable.
+o	Do not include pagination unless SAMPLES is >101. 
+
+Use Case Process Flow – There are 2 Use Case Flows:
+•	APIUseCaseFlow:
+o	User clicks GetAPIScenarios to asynchronously request an array of ProductionScenario items from path "GetProductionScenarios" of AutoOrderAPI.
+o	AutoOrderAPI receives the request and passes the payload to the "GetScenarios" handler on AutoOrderFunction.
+o	AutoOrderFunction returns a randomly generated array of ProductionScenario items.
+o	ProductionScenario items from the AutoOrderAPI response are displayed in ProductionScenarioTable.
+o	User optionally changes 0 or more Sel checkboxes in ProductionScenarioTable.
+o	User clicks RecommendOrders
+o	ProductionScenario items whose Sel checkbox remains selected are composed into an asynchronous POST request to "GetOrders" path of AutoOrderAPI.
+o	AutoOrderAPI passes the request payload to the "GetOrders" handler on AutoOrderFunction, which processes the ProductionScenario items and returns an OrderScheduleArray containing a number of OrderSchedule items equal to the number of ProductionScenario items in the request.
+o	AutoOrderAPI returns OrderScheduleArray as JSON to the caller.
+o	When response from AutoOrderAPI is received, the UI displays the OrderSchedule items in OrderScheduleTable.
+•	LocalUseCaseFlow:
+o	User clicks GetLocalScenarios.
+o	ProductionScenario items from LocalProductionScenarioArray are displayed in ProductionScenarioTable.
+o	User optionally changes 0 or more Sel checkboxes in ProductionScenarioTable.
+o	User clicks RecommendOrders
+o	ProductionScenario items whose Sel checkbox is checked in ProductionScenarioTable are used to select an equal number of OrderSchedule items from LocalOrderScheduleArray and display them in OrderScheduleTable.
+
+Comment the code with explanations where appropriate to help a beginning developer understand it.
+
+Include a copy of this prompt in the project in file "MyHumanPrompt.txt" so I can save it in GIT. Try to preserve bullet indentation as best you can so it stays easily human-readable.
+
+Also include an idealized prompt in the project in file "IdealizedPrompt.txt" so I can save it in GIT. Try to make this one use the least possible credits while still being human readable and maintainable.
+
+If my prompt is unclear or incomplete, chat with me to get other decisions you need. If we need to chat for you to get more decisions, after each time you modify the Application, include in your final response an idealized prompt that can regenerate the final app in one shot.
+
+I also want you to write some project configurations, but since you are not able to edit the package.json file, Create a file of manual changes called ManualToDos.txt that I need to make manually to project configuration files to enable the following:
+•	Enable all build and deploy commands to work in the project main directory, without needing to change directories to build or deploy.
+•	"rebuildall", one command that can get dependencies and build, for both the lambda function and React UI, without having to change directories or issue multiple commands from multiple directories.

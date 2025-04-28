@@ -1,0 +1,36 @@
+
+Create an AutoOrder inventory optimization system with React frontend and AWS backend (API Gateway + Lambda). The system helps manufacturers optimize part orders based on production requirements.
+
+Core features:
+- Constants: PERIODS=12 (weeks), SAMPLES=30 (scenarios max)
+- Types: Requirements (Rqt), Receipts (Rec), Inventory (Inv), Orders (Ord) arrays
+- Main data structures: ProductionScenario, OrderSchedule
+- Algorithm to calculate optimal orders based on: lead time, min order quantity, package quantity, target inventory levels, safety stock
+- UI with tables for scenarios and order schedules
+- Color coding for inventory issues (red=zero, orange=excessive)
+- Local and API workflows
+
+UI sections:
+1. Title row (Auto Order Generator)
+2. Scenario Selection (buttons, dropdown, table of scenarios)
+3. Order Recommendation buttons
+4. Order Schedule Results table
+5. Demonstration table (100 sample scenarios)
+
+Backend:
+- AWS API Gateway with CORS support and two paths:
+  - GetProductionScenarios: returns scenarios based on ScenarioSet parameter
+  - GetOrders: calculates order schedules based on input scenarios
+- Lambda function implementing both API endpoints
+- CDK TypeScript infrastructure code
+
+Generate mock data for local testing. Implement color-coded UI tables with vertically-merged cells. Show loader during API calls.
+
+Order scheduling algorithm must:
+1. Maintain inventory above safety stock
+2. Avoid excessive inventory (>3x target)
+3. Round orders to package quantities and respect min order quantities
+4. Consider lead time for order placement
+5. Generate warning notes for inventory issues
+
+Include CDK TypeScript infrastructure for AWS deployment.

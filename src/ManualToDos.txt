@@ -1,0 +1,231 @@
+# Manual Configuration Changes
+
+Make the following manual changes to your project configuration:
+
+## 1. Create cdk/package.json for AWS CDK
+
+Create the file `cdk/package.json` with:
+
+```json
+{
+  "name": "auto-order-cdk",
+  "version": "0.1.0",
+  "bin": {
+    "auto-order-cdk": "bin/auto-order-cdk.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy": "cdk deploy"
+  },
+  "devDependencies": {
+    "@types/node": "^10.17.27",
+    "aws-cdk": "^2.80.0",
+    "ts-node": "^10.9.1",
+    "typescript": "~4.9.5"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.80.0",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.21"
+  }
+}
+```
+
+## 2. Create lambda/package.json for AWS Lambda
+
+Create the file `lambda/package.json` with:
+
+```json
+{
+  "name": "auto-order-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for AutoOrder application",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "typescript": "^5.1.6"
+  }
+}
+```
+
+## 3. Update package.json to add unified build commands
+
+Add the following scripts to the main package.json:
+
+```json
+"scripts": {
+  "dev": "vite",
+  "build": "tsc && vite build",
+  "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+  "preview": "vite preview",
+  "install:all": "npm install && cd lambda && npm install && cd ../cdk && npm install",
+  "build:lambda": "cd lambda && npm run build",
+  "build:cdk": "cd cdk && npm run build",
+  "build:all": "npm run build && npm run build:lambda && npm run build:cdk",
+  "rebuildall": "npm run install:all && npm run build:all",
+  "deploy": "cd cdk && npm run deploy"
+}
+```
+
+## 4. Create cdk/bin/auto-order-cdk.ts and cdk/tsconfig.json
+
+Create the file `cdk/bin/auto-order-cdk.ts` with:
+
+```typescript
+#!/usr/bin/env node
+import 'source-map-support/register';
+import * as cdk from 'aws-cdk-lib';
+import { AutoOrderStack } from '../lib/auto-order-stack';
+
+const app = new cdk.App();
+new AutoOrderStack(app, 'AutoOrderStack', {
+  env: { 
+    account: process.env.CDK_DEFAULT_ACCOUNT, 
+    region: process.env.CDK_DEFAULT_REGION 
+  },
+});
+```
+
+Create the file `cdk/tsconfig.json` with:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "commonjs",
+    "lib": ["es2018"],
+    "declaration": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": false,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false,
+    "typeRoots": ["./node_modules/@types"],
+    "outDir": "dist"
+  },
+  "exclude": ["node_modules", "cdk.out"]
+}
+```
+
+## 5. Create lambda/tsconfig.json
+
+Create the file `lambda/tsconfig.json` with:
+
+```json
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "**/*.test.ts"]
+}
+```
+
+## 6. Create `cdk/cdk.json` configuration
+
+Create the file `cdk/cdk.json` with:
+
+```json
+{
+  "app": "npx ts-node --prefer-ts-exts bin/auto-order-cdk.ts",
+  "watch": {
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "**/*.d.ts",
+      "**/*.js",
+      "tsconfig.json",
+      "package*.json",
+      "yarn.lock",
+      "node_modules",
+      "test"
+    ]
+  },
+  "context": {
+    "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/core:target-partitions": [
+      "aws",
+      "aws-cn"
+    ],
+    "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": true,
+    "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": true,
+    "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
+    "@aws-cdk/aws-codepipeline:crossAccountKeyAliasStackSafeResourceName": true,
+    "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
+    "@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption": true,
+    "@aws-cdk/aws-apigateway:disableCloudWatchRole": true,
+    "@aws-cdk/core:enablePartitionLiterals": true,
+    "@aws-cdk/aws-events:eventsTargetQueueSameAccount": true,
+    "@aws-cdk/aws-iam:standardizedServicePrincipals": true,
+    "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": true,
+    "@aws-cdk/aws-iam:importedRoleStackSafeDefaultPolicyName": true,
+    "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
+    "@aws-cdk/aws-route53-patters:useFargateContainerForCustomDomain": true,
+    "@aws-cdk/customresources:installLatestAwsSdkDefault": false
+  }
+}
+```
+
+## 7. Create the directory structure
+
+Ensure you have the following directory structure:
+```
+├── cdk
+│   ├── bin
+│   │   └── auto-order-cdk.ts
+│   ├── cdk.json
+│   ├── lib
+│   │   └── auto-order-stack.ts
+│   ├── package.json
+│   └── tsconfig.json
+├── lambda
+│   ├── algorithm.ts
+│   ├── index.ts
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── types.ts
+├── package.json
+└── src
+    └── ... (React app files)
+```
+
+## 8. Move the Lambda and CDK files to their proper locations
+
+Copy the files from these locations:
+- Move `src/cdk/lib/auto-order-stack.ts` to `cdk/lib/auto-order-stack.ts`
+- Move `src/lambda/algorithm.ts` to `lambda/algorithm.ts`
+- Move `src/lambda/index.ts` to `lambda/index.ts`
+- Move `src/lambda/types.ts` to `lambda/types.ts`
+
+## 9. Final steps
+
+1. Run `npm run install:all` to install dependencies for all projects
+2. Run `npm run build:all` to build all projects
+3. Configure your AWS credentials if you plan to deploy the application
+4. Run `npm run deploy` when ready to deploy to AWS
