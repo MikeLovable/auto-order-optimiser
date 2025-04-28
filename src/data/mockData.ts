@@ -1,6 +1,9 @@
 
-import { ProductionScenarioArray, OrderScheduleArray, SAMPLES } from "../types";
+import { ProductionScenarioArray, OrderScheduleArray } from "../types";
 import { generateRandomProductionScenarios, calculateOrderSchedules } from "../utils/algorithm";
+
+// Constants
+const SAMPLES = 30;
 
 // Generate 20 random production scenarios for local testing
 export const LocalProductionScenarioArray: ProductionScenarioArray = generateRandomProductionScenarios(20);

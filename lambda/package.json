@@ -1,0 +1,15 @@
+
+{
+  "name": "auto-order-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for AutoOrder application",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.119",
+    "typescript": "^5.1.6"
+  }
+}
