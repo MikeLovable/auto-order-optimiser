@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { ProductionScenarioArray, PERIODS } from '../types';
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ProductionScenarioTableProps {
   scenarios: ProductionScenarioArray;
@@ -10,12 +12,27 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
   // Create week headers for columns (0 to PERIODS)
   const weekHeaders = Array.from({ length: PERIODS + 1 }, (_, i) => i);
 
+  // Handle select all checkbox change
+  const handleSelectAll = (checked: boolean) => {
+    scenarios.forEach((_, index) => onSelectionChange(index, checked));
+  };
+
+  // Calculate the current state of select all (checked if all are selected)
+  const allSelected = scenarios.length > 0 && scenarios.every(scenario => scenario.Sel);
+
   return (
     <div className="overflow-x-auto border border-black">
       <table className="w-full table-auto border-collapse">
         <thead>
           <tr className="bg-gray-100 text-xs">
-            <th className="border p-1 sticky left-0 bg-gray-100 w-8">Sel</th>
+            <th className="border p-1 sticky left-0 bg-gray-100 w-8">
+              <div className="flex items-center justify-center">
+                <Checkbox 
+                  checked={allSelected}
+                  onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                />
+              </div>
+            </th>
             <th className="border p-1 sticky left-10 bg-gray-100 w-24">MPN</th>
             <th className="border p-1 sticky left-32 bg-gray-100 w-28">MPN Attributes</th>
             <th className="border p-1 w-12">Info</th>
@@ -29,23 +46,27 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
             <React.Fragment key={`${scenario.MPN}-${scenarioIndex}`}>
               {/* Requirements Row */}
               <tr className="text-xs">
-                <td rowSpan={3} className="border p-1 align-top text-center sticky left-0 bg-white">
-                  <input
-                    type="checkbox"
-                    checked={scenario.Sel}
-                    onChange={(e) => onSelectionChange(scenarioIndex, e.target.checked)}
-                    className="w-4 h-4"
-                  />
+                <td rowSpan={3} className="border p-1 sticky left-0 bg-white">
+                  <div className="h-full flex items-center justify-center">
+                    <Checkbox
+                      checked={scenario.Sel}
+                      onCheckedChange={(checked) => onSelectionChange(scenarioIndex, checked as boolean)}
+                    />
+                  </div>
                 </td>
-                <td rowSpan={3} className="border p-1 align-top font-medium sticky left-10 bg-white whitespace-nowrap overflow-hidden text-ellipsis">
-                  {scenario.MPN}
+                <td rowSpan={3} className="border p-1 sticky left-10 bg-white">
+                  <div className="h-full flex items-center font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                    {scenario.MPN}
+                  </div>
                 </td>
-                <td rowSpan={3} className="border p-1 align-top text-xs sticky left-32 bg-white">
-                  <div>LdTm[{scenario.LdTm}]</div>
-                  <div>MOQ[{scenario.MOQ}]</div>
-                  <div>PkQty[{scenario.PkQty}]</div>
-                  <div>InvTgt[{scenario.InvTgt}]</div>
-                  <div>SStok[{scenario.SStok}]</div>
+                <td rowSpan={3} className="border p-1 sticky left-32 bg-white">
+                  <div className="h-full flex flex-col justify-center text-xs">
+                    <div>LdTm[{scenario.LdTm}]</div>
+                    <div>MOQ[{scenario.MOQ}]</div>
+                    <div>PkQty[{scenario.PkQty}]</div>
+                    <div>InvTgt[{scenario.InvTgt}]</div>
+                    <div>SStok[{scenario.SStok}]</div>
+                  </div>
                 </td>
                 <td className="border p-1 font-medium text-center">Rqt</td>
                 {scenario.Rqt.map((value, i) => (
