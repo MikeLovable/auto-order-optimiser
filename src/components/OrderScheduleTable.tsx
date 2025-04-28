@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { OrderScheduleArray, PERIODS } from '../types';
 
@@ -76,21 +77,29 @@ const OrderScheduleTable: React.FC<OrderScheduleTableProps> = ({ orderSchedules,
           {orderSchedules.map((schedule, scheduleIndex) => (
             <React.Fragment key={`${schedule.MPN}-${scheduleIndex}`}>
               <tr className="text-xs">
-                <td rowSpan={7} className="border border-gray-300 p-1 align-top font-medium sticky left-0 bg-white whitespace-nowrap overflow-hidden text-ellipsis">
-                  {schedule.MPN}
+                <td rowSpan={7} className="border border-gray-300 p-1 sticky left-0 bg-white">
+                  <div className="h-full flex items-center font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                    {schedule.MPN}
+                  </div>
                 </td>
-                <td rowSpan={7} className="border border-gray-300 p-1 align-top text-xs sticky left-10 bg-white">
-                  <div>LdTm[{schedule.LdTm}]</div>
-                  <div>MOQ[{schedule.MOQ}]</div>
-                  <div>PkQty[{schedule.PkQty}]</div>
-                  <div>InvTgt[{schedule.InvTgt}]</div>
-                  <div>SStok[{schedule.SStok}]</div>
+                <td rowSpan={7} className="border border-gray-300 p-1 sticky left-10 bg-white">
+                  <div className="h-full flex flex-col justify-center text-xs">
+                    <div>LdTm[{schedule.LdTm}]</div>
+                    <div>MOQ[{schedule.MOQ}]</div>
+                    <div>PkQty[{schedule.PkQty}]</div>
+                    <div>InvTgt[{schedule.InvTgt}]</div>
+                    <div>SStok[{schedule.SStok}]</div>
+                  </div>
                 </td>
-                <td rowSpan={7} className="border border-gray-300 p-1 align-top text-xs sticky left-36 bg-white whitespace-normal break-words">
-                  {schedule.Notes}
+                <td rowSpan={7} className="border border-gray-300 p-1 sticky left-36 bg-white">
+                  <div className="h-full flex items-center text-xs whitespace-normal break-words">
+                    {schedule.Notes}
+                  </div>
                 </td>
-                <td rowSpan={3} className="border border-gray-300 p-1 align-middle text-center font-medium sticky left-[320px] bg-gray-50">
-                  In
+                <td rowSpan={3} className="border border-gray-300 p-1 sticky left-[320px] bg-gray-50">
+                  <div className="h-full flex items-center justify-center font-medium">
+                    In
+                  </div>
                 </td>
                 <td className="border border-gray-300 p-1 font-medium text-center">Rqt</td>
                 {schedule.Rqt.map((value, i) => (
@@ -121,8 +130,10 @@ const OrderScheduleTable: React.FC<OrderScheduleTableProps> = ({ orderSchedules,
               </tr>
               {/* Output section */}
               <tr className="text-xs">
-                <td rowSpan={4} className="border border-gray-300 p-1 align-middle text-center font-medium sticky left-[320px] bg-gray-50">
-                  Out
+                <td rowSpan={4} className="border border-gray-300 p-1 sticky left-[320px] bg-gray-50">
+                  <div className="h-full flex items-center justify-center font-medium">
+                    Out
+                  </div>
                 </td>
                 <td className="border border-gray-300 p-1 font-medium text-center">Rqt</td>
                 {schedule.Rqt.map((value, i) => (
