@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProductionScenarioArray, PERIODS } from '../types';
 
@@ -16,10 +15,10 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
       <table className="w-full table-auto border-collapse">
         <thead>
           <tr className="bg-gray-100 text-xs">
-            <th className="border p-1 sticky left-0 bg-gray-100">Sel</th>
-            <th className="border p-1 sticky left-10 bg-gray-100">MPN</th>
-            <th className="border p-1 sticky left-32 bg-gray-100">MPN Attributes</th>
-            <th className="border p-1">Info</th>
+            <th className="border p-1 sticky left-0 bg-gray-100 w-8">Sel</th>
+            <th className="border p-1 sticky left-10 bg-gray-100 w-24">MPN</th>
+            <th className="border p-1 sticky left-32 bg-gray-100 w-28">MPN Attributes</th>
+            <th className="border p-1 w-12">Info</th>
             {weekHeaders.map((week) => (
               <th key={week} className="border p-1 w-10 text-center">W{week}</th>
             ))}
@@ -30,7 +29,6 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
             <React.Fragment key={`${scenario.MPN}-${scenarioIndex}`}>
               {/* Requirements Row */}
               <tr className="text-xs">
-                {/* Merged cells for scenario info */}
                 <td rowSpan={3} className="border p-1 align-top text-center sticky left-0 bg-white">
                   <input
                     type="checkbox"
@@ -39,13 +37,15 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
                     className="w-4 h-4"
                   />
                 </td>
-                <td rowSpan={3} className="border p-1 align-top font-medium sticky left-10 bg-white">
+                <td rowSpan={3} className="border p-1 align-top font-medium sticky left-10 bg-white whitespace-nowrap overflow-hidden text-ellipsis">
                   {scenario.MPN}
                 </td>
                 <td rowSpan={3} className="border p-1 align-top text-xs sticky left-32 bg-white">
-                  <div>LdTm[{scenario.LdTm}], MOQ[{scenario.MOQ}]</div>
+                  <div>LdTm[{scenario.LdTm}]</div>
+                  <div>MOQ[{scenario.MOQ}]</div>
                   <div>PkQty[{scenario.PkQty}]</div>
-                  <div>InvTgt[{scenario.InvTgt}], SStok[{scenario.SStok}]</div>
+                  <div>InvTgt[{scenario.InvTgt}]</div>
+                  <div>SStok[{scenario.SStok}]</div>
                 </td>
                 <td className="border p-1 font-medium text-center">Rqt</td>
                 {scenario.Rqt.map((value, i) => (

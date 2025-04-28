@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrderScheduleArray, PERIODS } from '../types';
 
@@ -63,11 +62,11 @@ const OrderScheduleTable: React.FC<OrderScheduleTableProps> = ({ orderSchedules,
       <table className="w-full table-auto border-collapse border-gray-300">
         <thead>
           <tr className="bg-gray-100 text-xs">
-            <th className="border border-gray-300 p-1 sticky left-0 bg-gray-100">MPN</th>
-            <th className="border border-gray-300 p-1 sticky left-10 bg-gray-100">MPN Attributes</th>
-            <th className="border border-gray-300 p-1 sticky left-36 bg-gray-100">Notes</th>
-            <th className="border border-gray-300 p-1 sticky left-[320px] bg-gray-100">Dir</th>
-            <th className="border border-gray-300 p-1">Type</th>
+            <th className="border border-gray-300 p-1 sticky left-0 bg-gray-100 w-24">MPN</th>
+            <th className="border border-gray-300 p-1 sticky left-10 bg-gray-100 w-28">MPN Attributes</th>
+            <th className="border border-gray-300 p-1 sticky left-36 bg-gray-100 w-28">Notes</th>
+            <th className="border border-gray-300 p-1 sticky left-[320px] bg-gray-100 w-12">Dir</th>
+            <th className="border border-gray-300 p-1 w-12">Type</th>
             {weekHeaders.map((week) => (
               <th key={week} className="border border-gray-300 p-1 w-10 text-center">W{week}</th>
             ))}
@@ -76,18 +75,18 @@ const OrderScheduleTable: React.FC<OrderScheduleTableProps> = ({ orderSchedules,
         <tbody>
           {orderSchedules.map((schedule, scheduleIndex) => (
             <React.Fragment key={`${schedule.MPN}-${scheduleIndex}`}>
-              {/* Input section */}
               <tr className="text-xs">
-                {/* Merged cells for MPN info */}
-                <td rowSpan={7} className="border border-gray-300 p-1 align-top font-medium sticky left-0 bg-white">
+                <td rowSpan={7} className="border border-gray-300 p-1 align-top font-medium sticky left-0 bg-white whitespace-nowrap overflow-hidden text-ellipsis">
                   {schedule.MPN}
                 </td>
                 <td rowSpan={7} className="border border-gray-300 p-1 align-top text-xs sticky left-10 bg-white">
-                  <div>LdTm[{schedule.LdTm}], MOQ[{schedule.MOQ}]</div>
+                  <div>LdTm[{schedule.LdTm}]</div>
+                  <div>MOQ[{schedule.MOQ}]</div>
                   <div>PkQty[{schedule.PkQty}]</div>
-                  <div>InvTgt[{schedule.InvTgt}], SStok[{schedule.SStok}]</div>
+                  <div>InvTgt[{schedule.InvTgt}]</div>
+                  <div>SStok[{schedule.SStok}]</div>
                 </td>
-                <td rowSpan={7} className="border border-gray-300 p-1 align-top text-xs sticky left-36 bg-white">
+                <td rowSpan={7} className="border border-gray-300 p-1 align-top text-xs sticky left-36 bg-white whitespace-normal break-words">
                   {schedule.Notes}
                 </td>
                 <td rowSpan={3} className="border border-gray-300 p-1 align-middle text-center font-medium sticky left-[320px] bg-gray-50">
