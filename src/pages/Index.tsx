@@ -67,7 +67,7 @@ const Index = () => {
     }
   };
   
-  // Handler for recommending local orders
+  // Handler for local recommendation
   const handleRecommendLocal = () => {
     const selectedScenarios = productionScenarios.filter(scenario => scenario.Sel);
     if (selectedScenarios.length === 0) {
@@ -88,7 +88,7 @@ const Index = () => {
     }
   };
   
-  // Handler for recommending API orders
+  // Handler for API recommendation
   const handleRecommendApi = async () => {
     const selectedScenarios = productionScenarios.filter(scenario => scenario.Sel);
     if (selectedScenarios.length === 0) {
@@ -109,16 +109,7 @@ const Index = () => {
       setLoadingOrders(false);
     }
   };
-  
-  // Handler for recommending orders based on scenario source
-  const handleRecommendOrders = () => {
-    if (scenarioSource === 'api') {
-      handleRecommendApi();
-    } else {
-      handleRecommendLocal();
-    }
-  };
-  
+
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Row 1: Title */}
@@ -175,13 +166,20 @@ const Index = () => {
       </div>
       
       {/* Row 3: Order Recommendation Buttons */}
-      <div className="mb-6">
+      <div className="mb-6 space-x-4">
         <button
-          onClick={handleRecommendOrders}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-4"
+          onClick={handleRecommendLocal}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loadingOrders || productionScenarios.length === 0}
         >
-          {loadingOrders ? 'Calculating...' : 'Recommend Orders'}
+          RecommendLocal
+        </button>
+        <button
+          onClick={handleRecommendApi}
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          disabled={loadingOrders || productionScenarios.length === 0}
+        >
+          RecommendOrders
         </button>
       </div>
       

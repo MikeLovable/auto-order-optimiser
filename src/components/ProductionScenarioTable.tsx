@@ -19,6 +19,7 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
             <th className="border p-1 sticky left-0 bg-gray-100">Sel</th>
             <th className="border p-1 sticky left-10 bg-gray-100">MPN</th>
             <th className="border p-1 sticky left-32 bg-gray-100">MPN Attributes</th>
+            <th className="border p-1">Info</th>
             {weekHeaders.map((week) => (
               <th key={week} className="border p-1 w-10 text-center">W{week}</th>
             ))}
