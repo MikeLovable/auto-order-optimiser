@@ -15,7 +15,9 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
   // Handle select all checkbox change
   const handleSelectAll = (checked: boolean) => {
     // Update all scenarios with the same checked state
-    scenarios.forEach((_, index) => onSelectionChange(index, checked));
+    scenarios.forEach((_, index) => {
+      onSelectionChange(index, checked);
+    });
   };
 
   // Calculate the current state of select all (checked if all are selected)
