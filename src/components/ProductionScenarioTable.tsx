@@ -15,10 +15,15 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
   // Local state to track the "select all" checkbox state
   const [allSelected, setAllSelected] = useState<boolean>(false);
   
-  // Update the allSelected state when scenarios change
+  // Calculate if all scenarios are currently selected
+  // This is only used to initialize the header checkbox state correctly
   useEffect(() => {
-    const areAllSelected = scenarios.length > 0 && scenarios.every(scenario => scenario.Sel);
-    setAllSelected(areAllSelected);
+    if (scenarios.length > 0) {
+      const areAllSelected = scenarios.every(scenario => scenario.Sel);
+      setAllSelected(areAllSelected);
+    } else {
+      setAllSelected(false);
+    }
   }, [scenarios]);
 
   // Handle select all checkbox change
