@@ -2,7 +2,7 @@
 // Copy of the algorithm file to be bundled with the Lambda function
 // This is the same code as in src/utils/algorithm.ts
 
-import { ProductionScenario, OrderSchedule, PERIODS } from "./types";
+import { ProductionScenario, OrderSchedule, PERIODS } from "../types";
 
 /**
  * Calculate an optimal order schedule based on a production scenario
