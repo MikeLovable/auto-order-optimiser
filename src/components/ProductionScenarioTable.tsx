@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ProductionScenarioArray, PERIODS } from '../types';
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -8,30 +8,20 @@ interface ProductionScenarioTableProps {
   onSelectionChange: (index: number, selected: boolean) => void;
 }
 
-const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scenarios, onSelectionChange }) => {
+const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ 
+  scenarios, 
+  onSelectionChange 
+}) => {
   // Create week headers for columns (0 to PERIODS)
   const weekHeaders = Array.from({ length: PERIODS + 1 }, (_, i) => i);
-
-  // Local state to track the "select all" checkbox state
-  const [allSelected, setAllSelected] = useState<boolean>(false);
   
-  // Calculate if all scenarios are currently selected
-  // This is only used to initialize the header checkbox state correctly
-  useEffect(() => {
-    if (scenarios.length > 0) {
-      const areAllSelected = scenarios.every(scenario => scenario.Sel);
-      setAllSelected(areAllSelected);
-    } else {
-      setAllSelected(false);
-    }
-  }, [scenarios]);
-
+  // Calculate if all rows are selected
+  const allSelected = scenarios.length > 0 && scenarios.every(scenario => scenario.Sel);
+  const someSelected = scenarios.length > 0 && scenarios.some(scenario => scenario.Sel);
+  
   // Handle select all checkbox change
   const handleSelectAll = (checked: boolean) => {
-    // Update local state
-    setAllSelected(checked);
-    
-    // Update all scenarios with the same checked state
+    // Update all scenarios at once
     scenarios.forEach((_, index) => {
       onSelectionChange(index, checked);
     });
@@ -45,8 +35,10 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
             <th className="border p-1 sticky left-0 bg-gray-100 w-8">
               <div className="flex items-center justify-center">
                 <Checkbox 
-                  checked={allSelected}
-                  onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                  checked={allSelected} 
+                  indeterminate={!allSelected && someSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all rows"
                 />
               </div>
             </th>
@@ -67,7 +59,12 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
                   <div className="h-full flex items-center justify-center">
                     <Checkbox
                       checked={scenario.Sel}
-                      onCheckedChange={(checked) => onSelectionChange(scenarioIndex, checked === true)}
+                      onCheckedChange={(checked) => {
+                        if (checked !== 'indeterminate') {
+                          onSelectionChange(scenarioIndex, checked);
+                        }
+                      }}
+                      aria-label={`Select ${scenario.MPN}`}
                     />
                   </div>
                 </td>
