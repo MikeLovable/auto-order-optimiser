@@ -26,22 +26,38 @@ const SimScenarios: ProductionScenarioArray = generateRandomProductionScenarios(
  * Lambda handler function
  */
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  console.log('Lambda handler invoked with event:', JSON.stringify(event, null, 2));
+  
   // Set CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
     'Access-Control-Allow-Credentials': true,
     'Content-Type': 'application/json'
   };
   
+  // Handle OPTIONS requests for CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    console.log('Handling CORS preflight request');
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ message: 'CORS preflight handled successfully' }),
+    };
+  }
+  
   try {
     // Check which API path was called
     const path = event.path;
+    console.log(`Processing request for path: ${path}, method: ${event.httpMethod}`);
     
     if (path.includes('GetProductionScenarios')) {
       return await handleGetProductionScenarios(event, headers);
     } else if (path.includes('GetOrders')) {
       return await handleGetOrders(event, headers);
     } else {
+      console.log(`Unknown path: ${path}`);
       return {
         statusCode: 404,
         headers,
@@ -68,36 +84,40 @@ async function handleGetProductionScenarios(
   event: APIGatewayProxyEvent, 
   headers: Record<string, boolean | string>
 ): Promise<APIGatewayProxyResult> {
-  if (!event.body) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ message: 'Request body is required' }),
-    };
+  console.log('Handling GetProductionScenarios request');
+  
+  // For GET requests, parse query parameters instead of body
+  let scenarioSet = 'Customer';
+  
+  if (event.queryStringParameters && event.queryStringParameters.ScenarioSet) {
+    scenarioSet = event.queryStringParameters.ScenarioSet;
   }
-
-  const request: GetProductionScenariosRequest = JSON.parse(event.body);
-  const { ScenarioSet = 'Customer' } = request;
-
+  
+  console.log(`Requested scenario set: ${scenarioSet}`);
   let scenarios: ProductionScenarioArray;
   
   // Return different scenarios based on the ScenarioSet parameter
-  switch (ScenarioSet) {
+  switch (scenarioSet) {
     case 'Random':
+      console.log('Generating random scenarios');
       // Generate random scenarios at runtime
       scenarios = generateRandomProductionScenarios(SAMPLES);
       break;
     case 'Sim':
+      console.log('Returning Sim scenarios');
       // Return hardcoded Sim scenarios
       scenarios = SimScenarios;
       break;
     case 'Customer':
     default:
+      console.log('Returning Customer scenarios');
       // Return hardcoded Customer scenarios
       scenarios = CustomerScenarios;
       break;
   }
-
+  
+  console.log(`Returning ${scenarios.length} scenarios`);
+  
   return {
     statusCode: 200,
     headers,
@@ -112,7 +132,10 @@ async function handleGetOrders(
   event: APIGatewayProxyEvent, 
   headers: Record<string, boolean | string>
 ): Promise<APIGatewayProxyResult> {
+  console.log('Handling GetOrders request');
+  
   if (!event.body) {
+    console.error('Missing request body');
     return {
       statusCode: 400,
       headers,
@@ -120,10 +143,12 @@ async function handleGetOrders(
     };
   }
 
+  console.log('Parsing request body');
   const request: GetOrdersRequest = JSON.parse(event.body);
   const { scenarios } = request;
 
   if (!Array.isArray(scenarios) || scenarios.length === 0) {
+    console.error('Invalid or empty scenarios array');
     return {
       statusCode: 400,
       headers,
@@ -131,8 +156,10 @@ async function handleGetOrders(
     };
   }
 
+  console.log(`Calculating order schedules for ${scenarios.length} scenarios`);
   // Calculate order schedules for the provided scenarios
   const orderSchedules = calculateOrderSchedules(scenarios);
+  console.log(`Generated ${orderSchedules.length} order schedules`);
 
   return {
     statusCode: 200,

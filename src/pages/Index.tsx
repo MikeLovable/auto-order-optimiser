@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   ProductionScenarioArray, 
@@ -53,6 +54,7 @@ const Index = () => {
   const handleGetApiScenarios = async () => {
     setLoadingScenarios(true);
     try {
+      console.log(`Fetching ${scenarioSet} scenarios from API`);
       const scenarios = await getProductionScenarios(scenarioSet);
       setProductionScenarios(scenarios);
       setOrderSchedules([]);
@@ -99,6 +101,7 @@ const Index = () => {
     setLoadingOrders(true);
     try {
       // Get orders from API
+      console.log(`Sending ${selectedScenarios.length} selected scenarios to API for order calculation`);
       const orders = await getOrders(selectedScenarios);
       setOrderSchedules(orders);
     } catch (error) {

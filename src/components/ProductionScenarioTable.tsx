@@ -14,6 +14,7 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
 
   // Handle select all checkbox change
   const handleSelectAll = (checked: boolean) => {
+    // Update all scenarios with the same checked state
     scenarios.forEach((_, index) => onSelectionChange(index, checked));
   };
 
@@ -29,7 +30,7 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
               <div className="flex items-center justify-center">
                 <Checkbox 
                   checked={allSelected}
-                  onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                  onCheckedChange={(checked) => handleSelectAll(checked === true)}
                 />
               </div>
             </th>
@@ -50,7 +51,7 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
                   <div className="h-full flex items-center justify-center">
                     <Checkbox
                       checked={scenario.Sel}
-                      onCheckedChange={(checked) => onSelectionChange(scenarioIndex, checked as boolean)}
+                      onCheckedChange={(checked) => onSelectionChange(scenarioIndex, checked === true)}
                     />
                   </div>
                 </td>

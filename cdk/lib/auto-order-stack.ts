@@ -1,4 +1,3 @@
-
 import * as cdk from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
@@ -22,25 +21,79 @@ export class AutoOrderStack extends cdk.Stack {
       },
     });
 
-    // Create the API Gateway
+    // Create the API Gateway with proper CORS configuration
     const api = new apigateway.RestApi(this, 'AutoOrderAPI', {
       restApiName: 'AutoOrderAPI',
       description: 'API for Auto Order Optimization',
       defaultCorsPreflightOptions: {
         allowOrigins: apigateway.Cors.ALL_ORIGINS,
         allowMethods: apigateway.Cors.ALL_METHODS,
-        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
+        allowHeaders: ['Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token'],
         allowCredentials: true,
       },
     });
 
-    // Create the GetProductionScenarios resource and method
+    // Create the GetProductionScenarios resource and method - switched to GET
     const getProductionScenariosResource = api.root.addResource('GetProductionScenarios');
-    getProductionScenariosResource.addMethod('POST', new apigateway.LambdaIntegration(autoOrderFunction));
+    getProductionScenariosResource.addMethod('GET', new apigateway.LambdaIntegration(autoOrderFunction));
+    
+    // Add OPTIONS method for CORS preflight requests
+    getProductionScenariosResource.addMethod('OPTIONS', new apigateway.MockIntegration({
+      integrationResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+          'method.response.header.Access-Control-Allow-Methods': "'GET,OPTIONS'",
+          'method.response.header.Access-Control-Allow-Origin': "'*'",
+          'method.response.header.Access-Control-Allow-Credentials': "'true'"
+        },
+      }],
+      passthroughBehavior: apigateway.PassthroughBehavior.WHEN_NO_MATCH,
+      requestTemplates: {
+        "application/json": "{\"statusCode\": 200}"
+      }
+    }), {
+      methodResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Headers': true,
+          'method.response.header.Access-Control-Allow-Methods': true,
+          'method.response.header.Access-Control-Allow-Origin': true,
+          'method.response.header.Access-Control-Allow-Credentials': true,
+        }
+      }]
+    });
 
-    // Create the GetOrders resource and method
+    // Create the GetOrders resource and method - keep as POST
     const getOrdersResource = api.root.addResource('GetOrders');
     getOrdersResource.addMethod('POST', new apigateway.LambdaIntegration(autoOrderFunction));
+    
+    // Add OPTIONS method for CORS preflight requests
+    getOrdersResource.addMethod('OPTIONS', new apigateway.MockIntegration({
+      integrationResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+          'method.response.header.Access-Control-Allow-Methods': "'POST,OPTIONS'",
+          'method.response.header.Access-Control-Allow-Origin': "'*'",
+          'method.response.header.Access-Control-Allow-Credentials': "'true'"
+        },
+      }],
+      passthroughBehavior: apigateway.PassthroughBehavior.WHEN_NO_MATCH,
+      requestTemplates: {
+        "application/json": "{\"statusCode\": 200}"
+      }
+    }), {
+      methodResponses: [{
+        statusCode: '200',
+        responseParameters: {
+          'method.response.header.Access-Control-Allow-Headers': true,
+          'method.response.header.Access-Control-Allow-Methods': true,
+          'method.response.header.Access-Control-Allow-Origin': true,
+          'method.response.header.Access-Control-Allow-Credentials': true,
+        }
+      }]
+    });
 
     // Output the API URL
     new cdk.CfnOutput(this, 'ApiUrl', {

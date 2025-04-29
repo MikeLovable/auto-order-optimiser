@@ -20,14 +20,17 @@ const API_URL = "https://your-api-gateway-url.execute-api.region.amazonaws.com/p
  */
 export async function getProductionScenarios(scenarioSet: string = "Customer"): Promise<ProductionScenarioArray> {
   try {
-    const request: GetProductionScenariosRequest = { ScenarioSet: scenarioSet };
+    // Changed to use GET with query parameters
+    const url = new URL(`${API_URL}/GetProductionScenarios`);
+    url.searchParams.append('ScenarioSet', scenarioSet);
     
-    const response = await fetch(`${API_URL}/GetProductionScenarios`, {
-      method: "POST",
+    console.log(`Fetching scenarios from: ${url.toString()}`);
+    
+    const response = await fetch(url.toString(), {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
+        "Accept": "application/json",
       },
-      body: JSON.stringify(request),
     });
     
     if (!response.ok) {
@@ -51,6 +54,8 @@ export async function getProductionScenarios(scenarioSet: string = "Customer"): 
 export async function getOrders(scenarios: ProductionScenarioArray): Promise<OrderScheduleArray> {
   try {
     const request: GetOrdersRequest = { scenarios };
+    
+    console.log(`Sending order request to: ${API_URL}/GetOrders`);
     
     const response = await fetch(`${API_URL}/GetOrders`, {
       method: "POST",
