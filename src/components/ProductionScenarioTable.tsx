@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProductionScenarioArray, PERIODS } from '../types';
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -12,16 +12,25 @@ const ProductionScenarioTable: React.FC<ProductionScenarioTableProps> = ({ scena
   // Create week headers for columns (0 to PERIODS)
   const weekHeaders = Array.from({ length: PERIODS + 1 }, (_, i) => i);
 
+  // Local state to track the "select all" checkbox state
+  const [allSelected, setAllSelected] = useState<boolean>(false);
+  
+  // Update the allSelected state when scenarios change
+  useEffect(() => {
+    const areAllSelected = scenarios.length > 0 && scenarios.every(scenario => scenario.Sel);
+    setAllSelected(areAllSelected);
+  }, [scenarios]);
+
   // Handle select all checkbox change
   const handleSelectAll = (checked: boolean) => {
+    // Update local state
+    setAllSelected(checked);
+    
     // Update all scenarios with the same checked state
     scenarios.forEach((_, index) => {
       onSelectionChange(index, checked);
     });
   };
-
-  // Calculate the current state of select all (checked if all are selected)
-  const allSelected = scenarios.length > 0 && scenarios.every(scenario => scenario.Sel);
 
   return (
     <div className="overflow-x-auto border border-black">
